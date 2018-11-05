@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class Conn
+ * Class Endpoints
  *
  * This content is released under the MIT License (MIT)
  *
@@ -33,37 +33,106 @@
  * @filesource
  */
 
-class Conn
+class Endpoints
 {
-    private $host = DB['DB_HOST_NAME'];
-    private $user = DB['DB_USER_NAME'];
-    private $pass = DB['DB_PASSWORD'];
-    private $db   = DB['DB_DATABASE'];
+    private $api_key;
+    private $account_type;
 
-    protected $conn;
-
-    public function __construct()
+    public function __construct($api_key, $account_type)
     {
-        if (!isset($this->conn)) {
-            $this->conn = new mysqli($this->host, $this->user, $this->pass, $this->db);
-
-            if ($this->conn->connect_error) {
-                die('Connection failed: ('. $this->conn->connect_errno .') '. $this->conn->connect_error);
-            }
-        }
-
-        return $this->conn;
+        $this->api_key = $api_key;
+        $this->account_type = $account_type;
     }
 
 
-    public function filter($data)
+    public function province($province_id = null)
     {
-        if (!is_array($data)) {
-            $data = $this->conn->real_escape_string($data);
-            $data = trim(htmlentities($data, ENT_QUOTES, 'UTF-8', false));
-        } else {
-            $data = array_map(array( $this, 'filter' ), $data);
+        $params = (is_null($province_id)) ? array() : array('id' => $province_id);
+        $rest_client = new RestClient($this->api_key, 'province', $this->account_type);
+        return $rest_client->get($params);
+    }
+
+
+    public function city($province_id = null, $city_id = null)
+    {
+        $params = (is_null($province_id)) ? array() : array('province' => $province_id);
+        if (!is_null($city_id)) {
+            $params['id'] = $city_id;
         }
-        return $data;
+        $rest_client = new RestClient($this->api_key, 'city', $this->account_type);
+        return $rest_client->get($params);
+    }
+
+
+    public function subdistrict($city_id, $subdistrict_id = null)
+    {
+        $params = (is_null($city_id)) ? array() : array('city' => $city_id);
+        if (!is_null($subdistrict_id)) {
+            $params['id'] = $subdistrict_id;
+        }
+        $rest_client = new RestClient($this->api_key, 'subdistrict', $this->account_type);
+        return $rest_client->get($params);
+    }
+
+    public function cost($origin, $destination, $weight, $courier)
+    {
+        $params = array(
+            'origin' => $origin,
+            'destination' => $destination,
+            'weight' => $weight,
+            'courier' => $courier
+        );
+        $rest_client = new RestClient($this->api_key, 'cost', $this->account_type);
+        return $rest_client->post($params);
+    }
+
+
+    public function internationalOrigin($province_id = null, $city_id = null)
+    {
+        $params = (is_null($province_id)) ? array() : array('province' => $province_id);
+        if (!is_null($city_id)) {
+            $params['id'] = $city_id;
+        }
+        $rest_client = new RestClient($this->api_key, 'internationalOrigin', $this->account_type);
+        return $rest_client->get($params);
+    }
+
+
+    public function internationalDestination($country_id = null)
+    {
+        $params = (is_null($country_id)) ? array() : array('id' => $country_id);
+        $rest_client = new RestClient($this->api_key, 'internationalDestination', $this->account_type);
+        return $rest_client->get($params);
+    }
+
+
+    public function internationalCost($origin, $destination, $weight, $courier)
+    {
+        $params = array(
+            'origin' => $origin,
+            'destination' => $destination,
+            'weight' => $weight,
+            'courier' => $courier
+        );
+        $rest_client = new RestClient($this->api_key, 'internationalCost', $this->account_type);
+        return $rest_client->post($params);
+    }
+
+
+    public function currency()
+    {
+        $rest_client = new RestClient($this->api_key, 'currency', $this->account_type);
+        return $rest_client->get(array());
+    }
+
+
+    public function waybill($waybill_number, $courier)
+    {
+        $params = array(
+            'waybill' => $waybill_number,
+            'courier' => $courier
+        );
+        $rest_client = new RestClient($this->api_key, 'waybill', $this->account_type);
+        return $rest_client->post($params);
     }
 }
